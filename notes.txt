@@ -1,0 +1,9 @@
+C func call -- rdi rsi rdx rcx r8 r9
+C func return -- rax
+
+Callee saved registers -- rbx rbp r12 r13 r14 r15
+
+syscall
+  rax -- syscall number
+  args -- rdi rsi rdx r10 r8 r9
+
