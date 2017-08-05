@@ -117,48 +117,82 @@ string_equals:
 
 
 read_char:
-    sub rsp, 8 ; make some room on the stack
+    push 0 ; make some room on the stack
     mov rax, 0 ; read syscall
     mov rdi, 0 ; fd 0 -- stdin
     mov rsi, rsp ; read to space allocated on stack
     mov rdx, 1 ; read a single byte
     syscall
-
-    xor rax, rax
-    mov al, [rsp]
-    add rsp, 8
-
+    pop rax
     ret
 
-section .data
-word_buffer times 256 db 0
-
-section .text
-
 read_word:
-    mov r12, rdi ; save initial buffer location
-    mov r13, rdi ; current buffer pointer
-    mov r14, rsi ; save buffer length
+    ; save callee saved registers we will use
+    push r12
+    push r13
+
+    push rdi ; save initial buffer location
+
+    mov r12, rdi ; current buffer pointer
+
+    ; end buffer pointer
+    mov r13, rdi
+    add r13, rsi
+
+    ; read and skip any initial whitespace
+    .skip_whitespace_loop:
+    call read_char
+    cmp al, 0
+    je .done
+    cmp al, 0x20
+    je .skip_whitespace_loop
+    cmp al, 0x9
+    je .skip_whitespace_loop
+    cmp al, 0xa
+    je .skip_whitespace_loop
+
+    ; First char is in al so save it into buffer
+    mov [r12], al
+    inc r12
 
     .loop:
     call read_char
-    mov [r13], al
-    inc r13
+
+    ; check for terminal bytes
     cmp al, 0
     je .done
     cmp al, 0x20
     je .done
     cmp al, 0x9
     je .done
-    cmp al, 0x10
+    cmp al, 0xa
     je .done
-    mov rax, r13
-    sub rax, r12
-    cmp rax, rsi
+
+    ; append char to buffer
+    mov [r12], al
+    inc r12
+
+    cmp r12, r13
     jl .loop
 
     .done:
-    mov rax, r12
+    pop rax ; restore initial buffer pointer to be returned in rax
+    cmp r12, r13
+    jl .zero_terminate_string
+    mov r12, rax ; set buffer pointer to beginning so we will set zero terminator at beginning
+    mov rax, 0 ; string was too long so we have an error
+
+    .zero_terminate_string:
+    mov byte[r12], 0
+
+    ; return length of buffer in rdx
+    ; mov rdx, r12
+    ; sub rdx, rax
+
+    ; restore callee saved registers
+    pop r13
+    pop r12
+
     ret
 
 ; rdi points to a string
