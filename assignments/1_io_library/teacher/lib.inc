@@ -4,16 +4,16 @@ string_length:
     xor rax, rax
 .loop:
     cmp byte [rdi+rax], 0
-    je .end 
+    je .end
     inc rax
-    jmp .loop 
+    jmp .loop
 .end:
     ret
 
 print_char:
     push rdi
     mov rdi, rsp
-    call print_string 
+    call print_string
     pop rdi
     ret
 
@@ -25,9 +25,9 @@ print_string:
     push rdi
     call string_length
     pop rsi
-    mov rdx, rax 
+    mov rdx, rax
     mov rax, 1
-    mov rdi, 1 
+    mov rdi, 1
     syscall
     ret
 
@@ -36,7 +36,7 @@ print_uint:
     mov rdi, rsp
     push 0
     sub rsp, 16
-    
+
     dec rdi
     mov r8, 10
 
@@ -44,13 +44,13 @@ print_uint:
     xor rdx, rdx
     div r8
     or  dl, 0x30
-    dec rdi 
+    dec rdi
     mov [rdi], dl
     test rax, rax
-    jnz .loop 
-   
+    jnz .loop
+
     call print_string
-    
+
     add rsp, 24
     ret
 
@@ -82,7 +82,7 @@ parse_int:
 
     .error:
     xor rax, rax
-    ret 
+    ret
 
 ; returns rax: number, rdx : length
 parse_uint:
@@ -90,17 +90,17 @@ parse_uint:
     xor rax, rax
     xor rcx, rcx
 .loop:
-    movzx r9, byte [rdi + rcx] 
+    movzx r9, byte [rdi + rcx]
     cmp r9b, '0'
     jb .end
     cmp r9b, '9'
     ja .end
-    xor rdx, rdx 
+    xor rdx, rdx
     mul r8
     and r9b, 0x0f
     add rax, r9
-    inc rcx 
-    jmp .loop 
+    inc rcx
+    jmp .loop
     .end:
     mov rdx, rcx
     ret
@@ -117,69 +117,73 @@ string_equals:
     ret
     .no:
     xor rax, rax
-    ret 
+    ret
 
 
 read_char:
     push 0
     xor rax, rax
     xor rdi, rdi
-    mov rsi, rsp 
+    mov rsi, rsp
     mov rdx, 1
     syscall
     pop rax
-    ret 
-
-section .bss
-word_buffer resb 256
-
-section .text
+    ret
 
 read_word:
     push r14
-    xor r14, r14 
+    push r15
+    xor r14, r14
+    mov r15, rsi
+    dec r15
 
     .A:
+    push rdi
     call read_char
+    pop rdi
     cmp al, ' '
     je .A
     cmp al, 10
     je .A
     cmp al, 13
-    je .A 
-    cmp al, 9 
+    je .A
+    cmp al, 9
     je .A
     test al, al
     jz .C
 
     .B:
-    mov byte [word_buffer + r14], al
+    mov byte [rdi + r14], al
     inc r14
 
+    push rdi
     call read_char
+    pop rdi
     cmp al, ' '
     je .C
     cmp al, 10
     je .C
     cmp al, 13
-    je .C 
+    je .C
     cmp al, 9
     je .C
     test al, al
     jz .C
-    cmp r14, 254
-    je .C 
+    cmp r14, r15
+    je .C
 
     jmp .B
 
     .C:
-    mov byte [word_buffer + r14], 0
-    mov rax, word_buffer
-   
-    mov rdx, r14 
+    mov byte [rdi + r14], 0
+    mov rax, rdi
+
+    mov rdx, r14
+
+    pop r15
     pop r14
     ret
-   
+
 string_copy:
     mov dl, byte[rdi]
     mov byte[rsi], dl
