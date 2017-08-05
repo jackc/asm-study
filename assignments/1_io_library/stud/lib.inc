@@ -186,8 +186,8 @@ read_word:
     mov byte[r12], 0
 
     ; return length of buffer in rdx
-    ; mov rdx, r12
-    ; sub rdx, rax
+    mov rdx, r12
+    sub rdx, rax
 
     ; restore callee saved registers
     pop r13
