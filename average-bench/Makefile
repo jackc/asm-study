@@ -6,3 +6,6 @@ CC=gcc
 
 $(P): $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS) $(LDLIBS)
+
+avg_simd.o: avg_simd.asm
+	nasm -f elf64 avg_simd.asm
